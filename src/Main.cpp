@@ -95,15 +95,30 @@ int main() {
                     if (vOpt == 1) {
                         voters[voterIndex]->viewElections(elections, electionCount);
                     } else if (vOpt == 2) {
+                        // Check if there is at least one active election
+                        bool anyActive = false;
+                        for (int i = 0; i < electionCount; ++i) {
+                            if (elections[i]->getStatus()) {
+                                anyActive = true;
+                                break;
+                            }
+                        }
+                        if (!anyActive) {
+                            cout << "No election is currently active. You cannot vote.\n";
+                            continue;
+                        }
                         voters[voterIndex]->viewElections(elections, electionCount);
                         cout << "Select election number: ";
                         int electionChoice; cin >> electionChoice;
                         if (electionChoice < 1 || electionChoice > electionCount) { cout << "Invalid election.\n"; continue; }
+                        if (!elections[electionChoice-1]->getStatus()) {
+                            cout << "This election is not active.\n";
+                            continue;
+                        }
                         elections[electionChoice-1]->displayCandidates();
                         cout << "Select candidate number: ";
                         int candidateChoice; cin >> candidateChoice;
                         voters[voterIndex]->castVote(elections[electionChoice-1], electionChoice-1, candidateChoice-1);
-                        // Save elections after voting
                         fileHandler::saveElections(elections, electionCount, "data/elections.txt");
                     } else if (vOpt == 3) {
                         voters[voterIndex]->viewElections(elections, electionCount);
