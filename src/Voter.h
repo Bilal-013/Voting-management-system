@@ -10,7 +10,6 @@ class Voter : public User {
     bool hasVoted[MAX_ELECTIONS];
 public:
     Voter();
-    Voter(const std::string& uname, const std::string& pwd);
     Voter(const std::string& uname, const std::string& pwd, int id = -1);
     void viewElections(Election* elections[], int count);
     void castVote(Election* election, int electionIndex, int candidateIndex);

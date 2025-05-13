@@ -53,7 +53,6 @@ int main() {
     }
     if (!electionFile.good()) {
         std::ofstream out("data/elections.txt");
-        // Dummy: 1 local election for Lahore with 2 candidates, 1 national election with 2 candidates
         out << "local LocalElection1 0 0 2 Lahore\n1 Alice PartyA 0\n2 Bob PartyB 0\n";
         out << "national NationalElection1 0 0 2 Pakistan\n3 Charlie PartyC 0\n4 David PartyD 0\n";
         out.close();
@@ -61,14 +60,28 @@ int main() {
     userFile.close();
     electionFile.close();
 
-    Election** elections = new Election*[MAX_ELECTIONS];
-    int electionCount = 0;
+    // Load elections and users from file
+    Election** elections = nullptr;
+    int electionCount = fileHandler::loadElections(elections, "data/elections.txt");
     Voter** voters = new Voter*[MAX_USERS];
+    int voterCount = 0;
     int nextUserId = 1;
-    voters[0] = new Voter("voter1", "pass1", nextUserId++);
-    voters[1] = new Voter("voter2", "pass2", nextUserId++);
-    int voterCount = 2;
-    Administrator* admin = new Administrator("admin", "adminpass");
+    User** loadedUsers = nullptr;
+    int loadedUserCount = fileHandler::loadUsers(loadedUsers, "data/users.txt");
+    Administrator* admin = nullptr;
+    for (int i = 0; i < loadedUserCount; ++i) {
+        // If username is 'admin', treat as admin
+        if (loadedUsers[i]->getUsername() == "admin") {
+            admin = new Administrator(loadedUsers[i]->getUsername(), loadedUsers[i]->getPassword());
+        } else {
+            voters[voterCount++] = new Voter(loadedUsers[i]->getUsername(), loadedUsers[i]->getPassword(), loadedUsers[i]->getId());
+            if (loadedUsers[i]->getId() >= nextUserId) nextUserId = loadedUsers[i]->getId() + 1;
+        }
+        delete loadedUsers[i];
+    }
+    delete[] loadedUsers;
+    if (!admin) admin = new Administrator("admin", "adminpass");
+
     bool running = true;
     while (running) {
         cout << "\n--- Online Voting System ---\n";
