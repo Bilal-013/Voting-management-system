@@ -12,6 +12,15 @@ Voter::Voter(const std::string &uname, const std::string &pwd, int id) : User(un
     for (int i = 0; i < MAX_ELECTIONS; ++i)
         hasVoted[i] = false;
 }
+Voter::Voter(const std::string &uname, const std::string &pwd, int id, const std::string &name, int age, const std::string &region)
+    : User(uname, pwd, id)
+{
+    setName(name);
+    setAge(age);
+    setRegion(region);
+    for (int i = 0; i < MAX_ELECTIONS; ++i)
+        hasVoted[i] = false;
+}
 void Voter::viewElections(Election *elections[], int count)
 {
     cout << "Available Elections:\n";

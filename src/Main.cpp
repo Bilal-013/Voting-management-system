@@ -18,15 +18,23 @@ void registerVoter(Voter **voters, int &voterCount, int &nextUserId, Administrat
         cout << "Maximum number of voters reached.\n";
         return;
     }
-    string newUname, newPwd;
-    cout << "Enter new username: ";
-    cin >> newUname;
+    string newCNIC, newPwd, newName, newRegion;
+    int newAge;
+    cout << "Enter CNIC: ";
+    cin >> newCNIC;
+    cout << "Enter name: ";
+    cin.ignore();
+    getline(cin, newName);
+    cout << "Enter age: ";
+    cin >> newAge;
+    cout << "Enter region: ";
+    cin >> newRegion;
     cout << "Enter new password: ";
     cin >> newPwd;
     bool exists = false;
     for (int i = 0; i < voterCount; ++i)
     {
-        if (voters[i]->getUsername() == newUname)
+        if (voters[i]->getUsername() == newCNIC)
         {
             exists = true;
             break;
@@ -34,11 +42,11 @@ void registerVoter(Voter **voters, int &voterCount, int &nextUserId, Administrat
     }
     if (exists)
     {
-        cout << "Username already exists.\n";
+        cout << "A voter with this CNIC already exists.\n";
     }
     else
     {
-        voters[voterCount++] = new Voter(newUname, newPwd, nextUserId++);
+        voters[voterCount++] = new Voter(newCNIC, newPwd, nextUserId++, newName, newAge, newRegion);
         cout << "Registration successful.\n";
         User **userPtrs = new User *[voterCount + 1];
         for (int i = 0; i < voterCount; ++i)
@@ -175,6 +183,17 @@ int main()
                             system("pause");
                             continue;
                         }
+                        // Restrict voting in local elections to region
+                        LocalElection* local = dynamic_cast<LocalElection*>(elections[electionChoice - 1]);
+                        if (local) {
+                            if (voters[voterIndex]->getRegion() != local->getCity()) {
+                                cout << "You are not eligible to vote in this local election. Only residents of " << local->getCity() << " can vote.\n";
+                                system("pause");
+                                continue;
+                            }
+                        }
+                        // Show all candidates before voting
+                        cout << "Candidates participating in this election:\n";
                         elections[electionChoice - 1]->displayCandidates();
                         cout << "Select candidate number: ";
                         int candidateChoice;
@@ -268,7 +287,7 @@ int main()
                 {
                     system("cls");
                     cout << "\n--- Admin Menu ---\n";
-                    cout << "1. Create Election\n2. Add Candidate\n3. Edit Candidate\n4. Remove Candidate\n5. Start Election\n6. End Election\n7. View Results\n8. Logout\nSelect option: ";
+                    cout << "1. Create Election\n2. Add Candidate\n3. Add Voter\n4. Edit Voter\n5. Remove Voter\n6. Start Election\n7. End Election\n8. View Results\n9. Logout\nSelect option: ";
                     int aOpt;
                     cin >> aOpt;
                     if (aOpt == 1)
@@ -342,7 +361,7 @@ int main()
                         cin >> cparty;
                         if (!elections[eIdx - 1]->isPartyAllowed(cparty))
                         {
-                            cout << "Party already exists in this election!\n";
+                            cout << "A candidate from this party already exists in this local election!\n";
                             system("pause");
                             continue;
                         }
@@ -350,68 +369,102 @@ int main()
                         fileHandler::saveElections(elections, electionCount, "data/elections.txt");
                         system("pause");
                     }
-                    else if (aOpt == 3)
+                    else if (aOpt == 3) // Add Voter
                     {
                         system("cls");
-                        if (electionCount == 0)
-                        {
-                            cout << "No elections available.\n";
-                            system("pause");
-                            continue;
-                        }
-                        for (int i = 0; i < electionCount; ++i)
-                            cout << i + 1 << ". " << elections[i]->getTitle() << endl;
-                        cout << "Select election number: ";
-                        int eIdx;
-                        cin >> eIdx;
-                        if (eIdx < 1 || eIdx > electionCount)
-                        {
-                            cout << "Invalid election.\n";
-                            system("pause");
-                            continue;
-                        }
-                        elections[eIdx - 1]->displayCandidates();
-                        cout << "Select candidate number: ";
-                        int cIdx;
-                        cin >> cIdx;
-                        string newName, newParty;
-                        cout << "Enter new candidate name: ";
-                        cin >> newName;
-                        cout << "Enter new party: ";
-                        cin >> newParty;
-                        admin->editCandidate(elections[eIdx - 1], cIdx - 1, newName, newParty);
-                        fileHandler::saveElections(elections, electionCount, "data/elections.txt");
+                        registerVoter(voters, voterCount, nextUserId, admin);
                         system("pause");
                     }
-                    else if (aOpt == 4)
+                    else if (aOpt == 4) // Edit Voter
                     {
                         system("cls");
-                        if (electionCount == 0)
-                        {
-                            cout << "No elections available.\n";
+                        if (voterCount == 0) {
+                            cout << "No voters available.\n";
                             system("pause");
                             continue;
                         }
-                        for (int i = 0; i < electionCount; ++i)
-                            cout << i + 1 << ". " << elections[i]->getTitle() << endl;
-                        cout << "Select election number: ";
-                        int eIdx;
-                        cin >> eIdx;
-                        if (eIdx < 1 || eIdx > electionCount)
-                        {
-                            cout << "Invalid election.\n";
+                        for (int i = 0; i < voterCount; ++i)
+                            cout << i + 1 << ". CNIC: " << voters[i]->getUsername() << ", Name: " << voters[i]->getName() << ", Age: " << voters[i]->getAge() << ", Region: " << voters[i]->getRegion() << endl;
+                        cout << "Select voter number to edit: ";
+                        int vIdx;
+                        cin >> vIdx;
+                        if (vIdx < 1 || vIdx > voterCount) {
+                            cout << "Invalid voter.\n";
                             system("pause");
                             continue;
                         }
-                        elections[eIdx - 1]->displayCandidates();
-                        cout << "Select candidate number to remove: ";
-                        int cIdx;
-                        cin >> cIdx;
-                        admin->removeCandidate(elections[eIdx - 1], cIdx - 1);
-                        fileHandler::saveElections(elections, electionCount, "data/elections.txt");
+                        string newCNIC, newPwd, newName, newRegion;
+                        int newAge;
+                        cout << "Enter new CNIC: ";
+                        cin >> newCNIC;
+                        // Check for duplicate CNIC except for the current voter
+                        bool exists = false;
+                        for (int i = 0; i < voterCount; ++i) {
+                            if (i != vIdx - 1 && voters[i]->getUsername() == newCNIC) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (exists) {
+                            cout << "A voter with this CNIC already exists.\n";
+                            system("pause");
+                            continue;
+                        }
+                        cout << "Enter new name: ";
+                        cin.ignore();
+                        getline(cin, newName);
+                        cout << "Enter new age: ";
+                        cin >> newAge;
+                        cout << "Enter new region: ";
+                        cin >> newRegion;
+                        cout << "Enter new password: ";
+                        cin >> newPwd;
+                        voters[vIdx - 1]->setUsername(newCNIC);
+                        voters[vIdx - 1]->setPassword(newPwd);
+                        voters[vIdx - 1]->setName(newName);
+                        voters[vIdx - 1]->setAge(newAge);
+                        voters[vIdx - 1]->setRegion(newRegion);
+                        User **userPtrs = new User *[voterCount + 1];
+                        for (int i = 0; i < voterCount; ++i)
+                            userPtrs[i] = voters[i];
+                        userPtrs[voterCount] = admin;
+                        fileHandler::saveUsers(userPtrs, voterCount + 1, "data/users.txt");
+                        delete[] userPtrs;
+                        cout << "Voter updated.\n";
                         system("pause");
                     }
-                    else if (aOpt == 5)
+                    else if (aOpt == 5) // Remove Voter
+                    {
+                        system("cls");
+                        if (voterCount == 0) {
+                            cout << "No voters available.\n";
+                            system("pause");
+                            continue;
+                        }
+                        for (int i = 0; i < voterCount; ++i)
+                            cout << i + 1 << ". CNIC: " << voters[i]->getUsername() << endl;
+                        cout << "Select voter number to remove: ";
+                        int vIdx;
+                        cin >> vIdx;
+                        if (vIdx < 1 || vIdx > voterCount) {
+                            cout << "Invalid voter.\n";
+                            system("pause");
+                            continue;
+                        }
+                        delete voters[vIdx - 1];
+                        for (int i = vIdx - 1; i < voterCount - 1; ++i)
+                            voters[i] = voters[i + 1];
+                        --voterCount;
+                        User **userPtrs = new User *[voterCount + 1];
+                        for (int i = 0; i < voterCount; ++i)
+                            userPtrs[i] = voters[i];
+                        userPtrs[voterCount] = admin;
+                        fileHandler::saveUsers(userPtrs, voterCount + 1, "data/users.txt");
+                        delete[] userPtrs;
+                        cout << "Voter removed.\n";
+                        system("pause");
+                    }
+                    else if (aOpt == 6)
                     {
                         system("cls");
                         if (electionCount == 0)
@@ -435,7 +488,7 @@ int main()
                         fileHandler::saveElections(elections, electionCount, "data/elections.txt");
                         system("pause");
                     }
-                    else if (aOpt == 6)
+                    else if (aOpt == 7)
                     {
                         system("cls");
                         if (electionCount == 0)
@@ -459,7 +512,7 @@ int main()
                         fileHandler::saveElections(elections, electionCount, "data/elections.txt");
                         system("pause");
                     }
-                    else if (aOpt == 7)
+                    else if (aOpt == 8)
                     {
                         system("cls");
                         if (electionCount == 0)
@@ -482,7 +535,7 @@ int main()
                         admin->viewResults(elections[eIdx - 1]);
                         system("pause");
                     }
-                    else if (aOpt == 8)
+                    else if (aOpt == 9)
                     {
                         adminMenu = false;
                     }

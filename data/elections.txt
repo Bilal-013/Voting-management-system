@@ -1,5 +1,0 @@
-national National-1 0 1747132425 0 Pakistan
-national PLMN winning 0 1747146299 3 Pakistan
-1 Sajid MQM 2
-2 Zain PTA 0
-3 Ahmad PMA 0

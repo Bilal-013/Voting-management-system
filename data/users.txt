@@ -1,3 +1,6 @@
-1 voter1 pass1
-2 voter2 pass2
--1 admin adminpass
+1 1 pass Rehan 19 Lahore
+2 2 pass zain 20 Islamabad
+3 3 pass Sajid 19 Lahore
+4 4 pass Ahmad 20 Islamabad
+5 5 pass Hadi 20 Lahore
+-1 admin adminpass  0 

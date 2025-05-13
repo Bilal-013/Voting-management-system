@@ -127,7 +127,8 @@ void fileHandler::saveUsers(User **users, int userCount, const std::string &file
     std::ofstream out(filename);
     for (int i = 0; i < userCount; ++i)
     {
-        out << users[i]->getId() << ' ' << users[i]->getUsername() << ' ' << users[i]->getPassword() << '\n';
+        out << users[i]->getId() << ' ' << users[i]->getUsername() << ' ' << users[i]->getPassword()
+            << ' ' << users[i]->getName() << ' ' << users[i]->getAge() << ' ' << users[i]->getRegion() << '\n';
     }
     out.close();
 }
@@ -135,12 +136,12 @@ void fileHandler::saveUsers(User **users, int userCount, const std::string &file
 int fileHandler::loadUsers(User **&users, const std::string &filename)
 {
     std::ifstream in(filename);
-    std::string username, password;
-    int id;
+    std::string username, password, name, region;
+    int id, age;
     int count = 0;
     int capacity = 10;
     users = new User *[capacity];
-    while (in >> id >> username >> password)
+    while (in >> id >> username >> password >> name >> age >> region)
     {
         if (count >= capacity)
         {
@@ -151,7 +152,7 @@ int fileHandler::loadUsers(User **&users, const std::string &filename)
             delete[] users;
             users = temp;
         }
-        users[count++] = new Voter(username, password, id);
+        users[count++] = new Voter(username, password, id, name, age, region);
     }
     in.close();
     return count;

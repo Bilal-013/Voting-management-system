@@ -13,6 +13,7 @@ class Voter : public User
 public:
     Voter();
     Voter(const std::string &uname, const std::string &pwd, int id = -1);
+    Voter(const std::string &uname, const std::string &pwd, int id, const std::string &name, int age, const std::string &region);
     void viewElections(Election *elections[], int count);
     void castVote(Election *election, int electionIndex, int candidateIndex);
     void checkVoteStatus(int electionIndex);
