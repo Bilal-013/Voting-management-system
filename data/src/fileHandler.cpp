@@ -1,14 +1,15 @@
 #include "fileHandler.h"
 #include <fstream>
 #include <iostream>
+#include <sstream> // For istringstream
 #include "LocalElection.h"
 #include "NationalElection.h"
 #include "Voter.h"
 #include "Administrator.h"
-
-void fileHandler::saveCandidates(Candidate *candidates, int candidateCount, const std::string &filename)
+using namespace std;
+void fileHandler::saveCandidates(Candidate *candidates, int candidateCount, const string &filename)
 {
-    std::ofstream out(filename);
+    ofstream out(filename);
     for (int i = 0; i < candidateCount; ++i)
     {
         out << candidates[i].getId() << ' ' << candidates[i].getName() << ' ' << candidates[i].getParty() << ' ' << candidates[i].getVoteCount() << '\n';
@@ -16,10 +17,10 @@ void fileHandler::saveCandidates(Candidate *candidates, int candidateCount, cons
     out.close();
 }
 
-int fileHandler::loadCandidates(Candidate *&candidates, const std::string &filename)
+int fileHandler::loadCandidates(Candidate *&candidates, const string &filename)
 {
-    std::ifstream in(filename);
-    std::string name, party;
+    ifstream in(filename);
+    string name, party;
     int votes, id;
     int count = 0;
     int capacity = 10;
@@ -44,13 +45,13 @@ int fileHandler::loadCandidates(Candidate *&candidates, const std::string &filen
     return count;
 }
 
-void fileHandler::saveElections(Election **elections, int electionCount, const std::string &filename)
+void fileHandler::saveElections(Election **elections, int electionCount, const string &filename)
 {
-    std::ofstream out(filename);
+    ofstream out(filename);
     for (int i = 0; i < electionCount; ++i)
     {
-        std::string type = "local";
-        std::string cityOrCountry = "-";
+        string type = "local";
+        string cityOrCountry = "-";
         if (dynamic_cast<LocalElection *>(elections[i]))
         {
             type = "local";
@@ -71,10 +72,10 @@ void fileHandler::saveElections(Election **elections, int electionCount, const s
     out.close();
 }
 
-int fileHandler::loadElections(Election **&elections, const std::string &filename)
+int fileHandler::loadElections(Election **&elections, const string &filename)
 {
-    std::ifstream in(filename);
-    std::string type, title, cityOrCountry;
+    ifstream in(filename);
+    string type, title, cityOrCountry;
     bool status;
     time_t endTime;
     int count = 0;
@@ -108,7 +109,7 @@ int fileHandler::loadElections(Election **&elections, const std::string &filenam
         for (int j = 0; j < candidateCount; ++j)
         {
             int cid, votes;
-            std::string cname, cparty;
+            string cname, cparty;
             in >> cid >> cname >> cparty >> votes;
             e->addCandidate(cname, cparty);
             Candidate *c = e->getCandidate(j);
@@ -122,27 +123,63 @@ int fileHandler::loadElections(Election **&elections, const std::string &filenam
     return count;
 }
 
-void fileHandler::saveUsers(User **users, int userCount, const std::string &filename)
+void fileHandler::saveUsers(User **users, int userCount, const string &filename)
 {
-    std::ofstream out(filename);
+    ofstream out(filename);
     for (int i = 0; i < userCount; ++i)
     {
-        out << users[i]->getId() << ' ' << users[i]->getUsername() << ' ' << users[i]->getPassword()
-            << ' ' << users[i]->getName() << ' ' << users[i]->getAge() << ' ' << users[i]->getRegion() << '\n';
+        // Check if it's a voter
+        Voter* voter = dynamic_cast<Voter*>(users[i]);
+        if (voter)
+        {
+            // Save voter with all fields
+            out << voter->getId() << ' ' 
+                << voter->getUsername() << ' ' 
+                << voter->getPassword() << ' '
+                << (voter->getName().empty() ? "Unknown" : voter->getName()) << ' ' 
+                << voter->getAge() << ' ' 
+                << (voter->getRegion().empty() ? "Unknown" : voter->getRegion()) << '\n';
+        }
+        else
+        {
+            // Save admin or other user types with minimal fields
+            out << users[i]->getId() << ' ' 
+                << users[i]->getUsername() << ' ' 
+                << users[i]->getPassword() << ' '
+                << "Admin 0 System" << '\n';
+        }
     }
     out.close();
 }
 
-int fileHandler::loadUsers(User **&users, const std::string &filename)
+int fileHandler::loadUsers(User **&users, const string &filename)
 {
-    std::ifstream in(filename);
-    std::string username, password, name, region;
+    ifstream in(filename);
+    string line, username, password, name, region;
     int id, age;
     int count = 0;
     int capacity = 10;
     users = new User *[capacity];
-    while (in >> id >> username >> password >> name >> age >> region)
+    
+    // Read the file line by line for more robust handling
+    while (getline(in, line))
     {
+        // Skip empty lines or comment lines
+        if (line.empty() || line[0] == '/' || line[0] == '#')
+            continue;
+            
+        istringstream iss(line);
+        
+        // Try to read all fields
+        if (!(iss >> id >> username >> password))
+            continue;  // Skip if basic fields can't be read
+        
+        // Handle optional fields
+        if (!(iss >> name)) name = "Unknown";
+        if (!(iss >> age)) age = 0;
+        if (!(iss >> region)) region = "Unknown";
+        
+        // Resize array if needed
         if (count >= capacity)
         {
             capacity *= 2;
@@ -152,7 +189,12 @@ int fileHandler::loadUsers(User **&users, const std::string &filename)
             delete[] users;
             users = temp;
         }
-        users[count++] = new Voter(username, password, id, name, age, region);
+        
+        // Special handling for admin user
+        if (username == "admin")
+            users[count++] = new Administrator(username, password);
+        else
+            users[count++] = new Voter(username, password, id, name, age, region);
     }
     in.close();
     return count;

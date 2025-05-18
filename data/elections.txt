@@ -1,0 +1,11 @@
+local LocalElection1 0 0 2 Lahore
+1 Alice PartyA 0
+2 Bob PartyB 0
+national NationalElection1 1 1747220091 2 Pakistan
+3 Charlie PartyC 0
+4 David PartyD 0
+local Local-1 1 1747225667 2 Lahore
+1 Zain Khalid 0
+2 zarwa KSK 2
+national national2024 0 1747220714 1 Pakistan
+1 Ali Shehzad 0
